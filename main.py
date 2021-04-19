@@ -14,7 +14,7 @@ from model import MLP
 
 
 def main():
-    model_name = 'test_model'
+    model_name = 'model_test'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     batch_size = 8
     EPOCHS = 50
@@ -40,7 +40,9 @@ def main():
 
     model = MLP(in_feats=train_data.num_feats(),
                 hidden_dim=10,
-                n_classes=train_data.num_classes())
+                n_classes=train_data.num_classes(),
+                dropout=0.2,
+                activation='relu')
     optimizer = optim.Adam(model.parameters(),
                            lr=lr,
                            weight_decay=l2_reg)
@@ -78,7 +80,7 @@ def main():
         for X, y in test_loader:
             X = X.to(device)
 
-            preds = torch.argmax(model(X), dim=1)
+            preds = torch.argmax(model(X), dim=-1)
             y_pred.extend(preds.cpu())
             y_true.extend(y)
 
