@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from sklearn.metrics import accuracy_score, mean_squared_error
+from sklearn.metrics import accuracy_score, mean_squared_error, mean_absolute_error
 
 import torch
 from torch.utils.data import DataLoader
@@ -15,17 +15,43 @@ from model import ClassificationModel, RegressionModel
 
 
 def main():
-    model_name = 'model_test'
+    model_name = 'model_test_m8_cols'
     model_type = 'classification'
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     batch_size = 8
-    EPOCHS = 50
-    lr = 5e-3
+    EPOCHS = 25
+    lr = 3e-3
     l2_reg = 0.1
 
-    data = pd.read_csv('data/data_df.csv', header=0)
+    data = pd.read_csv('data/preprocessed.csv', header=0)
+    model_8_cols = [
+        'hazard',
+        'secondary_hazard_31',
+        # 'secondary_hazard_32',
+        'event_size_1',
+        'event_size_2',
+        'event_size_3',
+        'median_year_built',
+        'occupancy',
+        'walls',
+        'roofing',
+        'roof_type',
+        'height_1',
+        'height_2',
+        'height_3',
+        'height_6',
+        'percent_owner_occupied',
+        'percent_renter_occupied',
+        'roughness_2',
+        # 'roughness_3',
+        'pop',
+        'forested',
+        'housing_density'
+    ]
 
-    # TODO: Replace with cross validation
+    data = data[model_8_cols + ['target']]
+
+    # TODO: Replace with cross validation?
     test_df = data.sample(frac=0.2)
     data.drop(test_df.index, inplace=True)
 
@@ -76,6 +102,15 @@ def main():
                 loss = F.mse_loss(logits.squeeze(), y.type(torch.float32))
             else:
                 loss = F.cross_entropy(logits, y)
+                # y_one_hot = F.one_hot(y, num_classes=train_data.num_classes())
+                # loss += 1e-4 * F.mse_loss(logits, y_one_hot.float())
+
+            # TODO: Try adding distance penalty for ordinality?
+            # y_one_hot = F.one_hot(y, num_classes=train_data.num_classes())
+            # # preds = torch.argmax(model(X), dim=-1)
+            # pred_distance = torch.dist(logits, y_one_hot.float(), p=2)
+            #
+            # loss += 1e-4 * pred_distance
 
             loss.backward()
             optimizer.step()
@@ -95,8 +130,8 @@ def main():
                 preds = model(X).squeeze()
             else:
                 preds = torch.argmax(model(X), dim=-1)
-            y_pred.extend(preds.cpu())
-            y_true.extend(y)
+            y_pred.extend(preds.cpu().tolist())
+            y_true.extend(y.tolist())
 
     # TODO: Paper used MSE not accuracy
     if model_type == 'regression':
@@ -104,8 +139,15 @@ def main():
     else:
         print(y_pred)
         print(y_true)
+        missed_pred, missed_true = [], []
+        for y_p, y_t in zip(y_pred, y_true):
+            if y_p != y_t:
+                missed_pred.append(y_p)
+                missed_true.append(y_t)
         print(f'Test Accuracy: {accuracy_score(y_true, y_pred):.4f}')
         print(f'Test MSE: {mean_squared_error(y_true, y_pred):.4f}')
+        print(f'Test MAE: {mean_absolute_error(y_true, y_pred):.4f}')
+        print(f'Test Incorrect MAE: {mean_absolute_error(missed_true, missed_pred):.4f}')
 
     torch.save(model.state_dict(), f'models/{model_name}.pt')
 
