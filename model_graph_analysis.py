@@ -49,6 +49,7 @@ def main():
     node_in_degree = dict(model_graph.in_degree(weight='weight'))
     node_out_degree = dict(model_graph.out_degree(weight='weight'))
     closeness = dict(nx.closeness_centrality(model_graph, distance='distance'))
+    rev_closeness = dict(nx.closeness_centrality(model_graph.reverse(), distance='distance'))
     betweenness = dict(nx.betweenness_centrality(model_graph, weight='distance'))
 
     with open('nn_metrics/node_weighted_degree.json', 'w') as f:
@@ -59,6 +60,8 @@ def main():
         json.dump(node_out_degree, f, indent=2)
     with open('nn_metrics/node_closeness.json', 'w') as f:
         json.dump(closeness, f, indent=2)
+    with open('nn_metrics/node_rev_closeness.json', 'w') as f:
+        json.dump(rev_closeness, f, indent=2)
     with open('nn_metrics/node_betweenness.json', 'w') as f:
         json.dump(betweenness, f, indent=2)
 
