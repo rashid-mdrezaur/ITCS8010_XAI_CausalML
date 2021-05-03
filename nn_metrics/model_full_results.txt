@@ -1,0 +1,19 @@
+batch_size = 8
+EPOCHS = 20
+lr = 5e-3
+l2_reg = 0.1
+dist_reg = None
+n_trials = 20
+test_size = 0.2
+
+Avg Test Accuracy: 0.5152 (0.0861)
+Avg Test MSE: 1.4087 (0.5247)
+Avg Test MAE: 0.7435 (0.1949)
+Avg Test Incorrect MAE: 1.5195 (0.2367)
+
+Best Trial:
+Trial 19
+Test Accuracy: 0.6957
+Test MSE: 0.6522
+Test MAE: 0.3913
+Test Incorrect MAE: 1.2857
