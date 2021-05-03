@@ -1,9 +1,8 @@
-Avg over 10 trials with random sampled test set
-
 batch_size = 8
 EPOCHS = 20
 lr = 5e-3
 l2_reg = 0.1
+dist_reg = None
 n_trials = 20
 test_size = 0.2
 

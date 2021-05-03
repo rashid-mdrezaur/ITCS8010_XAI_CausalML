@@ -1,5 +1,3 @@
-Avg over 10 trials with random sampled test set
-
 batch_size = 8
 EPOCHS = 20
 lr = 5e-3
