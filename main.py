@@ -16,47 +16,48 @@ from model import ClassificationModel
 
 
 def main():
-    model_name = 'model_08_cols_w_dist'
+    model_name = 'model_test'
     os.makedirs(f'models/{model_name}', exist_ok=True)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     batch_size = 8
     EPOCHS = 20
     lr = 5e-3
     l2_reg = 0.1
-    n_trials = 10
+    dist_reg = None
+    n_trials = 20
+    test_size = 0.2
 
     data = pd.read_csv('data/preprocessed.csv', header=0)
-    model_8_cols = [
-        'hazard',
-        'secondary_hazard_31',
-        # 'secondary_hazard_32',
-        'event_size_1',
-        'event_size_2',
-        'event_size_3',
-        'median_year_built',
-        'occupancy',
-        'walls',
-        'roofing',
-        'roof_type',
-        'height_1',
-        'height_2',
-        'height_3',
-        'height_6',
-        'percent_owner_occupied',
-        'percent_renter_occupied',
-        'roughness_2',
-        # 'roughness_3',
-        'pop',
-        'forested',
-        'housing_density'
-    ]
-
-    data = data[model_8_cols + ['target']]
+    # model_8_cols = [
+    #     'hazard',
+    #     'secondary_hazard_31',
+    #     # 'secondary_hazard_32',
+    #     'event_size_1',
+    #     'event_size_2',
+    #     'event_size_3',
+    #     'median_year_built',
+    #     'occupancy',
+    #     'walls',
+    #     'roofing',
+    #     'roof_type',
+    #     'height_1',
+    #     'height_2',
+    #     'height_3',
+    #     'height_6',
+    #     'percent_owner_occupied',
+    #     'percent_renter_occupied',
+    #     'roughness_2',
+    #     # 'roughness_3',
+    #     'pop',
+    #     'forested',
+    #     'housing_density'
+    # ]
+    # data = data[model_8_cols + ['target']]
 
     acc_list, mse_list, mae_list, mae_missed_list = [], [], [], []
     for trial in range(n_trials):
 
-        test_df = data.sample(frac=0.2)
+        test_df = data.sample(frac=test_size)
         train_df = data.drop(test_df.index)
 
         train_data = BldgDataset(train_df)
@@ -99,7 +100,12 @@ def main():
                 # TODO: Find a loss function for ordinal classification. Try adding distance penalty for ordinality?
                 loss = F.cross_entropy(logits, y)
                 # y_one_hot = F.one_hot(y, num_classes=train_data.num_classes())
-                # loss += 1e-4 * F.mse_loss(logits, y_one_hot.float())
+                # loss += dist_reg * F.mse_loss(logits, y_one_hot.float())
+
+                if dist_reg is not None:
+                    y_one_hot = F.one_hot(y, num_classes=train_data.num_classes())
+                    pred_distance = torch.dist(logits, y_one_hot.float(), p=2)
+                    loss += dist_reg * pred_distance
 
                 loss.backward()
                 optimizer.step()
@@ -131,6 +137,7 @@ def main():
         mae = mean_absolute_error(y_true, y_pred)
         mae_missed = mean_absolute_error(missed_true, missed_pred)
 
+        print(f'Trial {trial:02d}')
         print(f'Test Accuracy: {acc:.4f}')
         print(f'Test MSE: {mse:.4f}')
         print(f'Test MAE: {mae:.4f}')
@@ -141,7 +148,7 @@ def main():
         mae_list.append(mae)
         mae_missed_list.append(mae_missed)
 
-        torch.save(model.state_dict(), f'models/{model_name}/{model_name}_{trial}.pt')
+        torch.save(model.state_dict(), f'models/{model_name}/{model_name}_{trial:02d}.pt')
 
     print('-' * 30)
     print(f'Avg Test Accuracy: {mean(acc_list):.4f} ({stdev(acc_list):.4f})')
