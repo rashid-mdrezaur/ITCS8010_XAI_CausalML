@@ -3,6 +3,7 @@
 import torch
 import torch.nn.functional as F
 import networkx as nx
+import matplotlib.pyplot as plt
 
 
 def main():
@@ -31,18 +32,29 @@ def main():
     model_graph.add_nodes_from(hidden_nodes)
     model_graph.add_nodes_from(out_nodes)
 
-    in_hidden_edges = make_weighted_edges(in_nodes, hidden_nodes[:-1], hidden_weights, normalize=True)
-    hidden_out_edges = make_weighted_edges(hidden_nodes, out_nodes, out_weights, normalize=True)
+    in_hidden_edges = make_weighted_edges(in_nodes, hidden_nodes[:-1], hidden_weights, normalize=False)
+    hidden_out_edges = make_weighted_edges(hidden_nodes, out_nodes, out_weights, normalize=False)
 
     model_graph.add_edges_from(in_hidden_edges)
     model_graph.add_edges_from(hidden_out_edges)
 
-    print('\ndegree')
-    print(model_graph.degree(weight='weight'))
-    print('\ncloseness')
-    print(nx.closeness_centrality(model_graph, distance='distance'))
-    print('\nbetweenness')
-    print(nx.betweenness_centrality(model_graph, weight='weight'))
+    # print('\ndegree')
+    # print(model_graph.degree(weight='weight'))
+    # print('\ncloseness')
+    # print(nx.closeness_centrality(model_graph, distance='distance'))
+    # print('\nbetweenness')
+    # print(nx.betweenness_centrality(model_graph, weight='weight'))
+
+    pos = tripartite_draw_pos(in_nodes, hidden_nodes, out_nodes)
+    edge_colors = ['k' if model_graph[u][v]['sign'] == 1 else 'r' for u, v in model_graph.edges()]
+    edge_widths = [model_graph[u][v]['weight'] * 4 for u, v in model_graph.edges()]
+
+    node_degree = [w * 100 for n, w in model_graph.degree(weight='weight')]
+
+    plt.figure(figsize=(12, 8))
+    nx.draw(model_graph, pos=pos, width=edge_widths, edge_color=edge_colors, node_size=node_degree)
+    plt.savefig('model_graph.png', dpi=300)
+    plt.show()
 
 
 def make_nodes(layer, dim, has_bias=True):
@@ -66,6 +78,15 @@ def make_weighted_edges(in_nodes, out_nodes, weights, normalize=False):
             edges.append((in_node, out_node, {'weight': edge_weight, 'distance': 1/edge_weight, 'sign': sign}))
 
     return edges
+
+
+def tripartite_draw_pos(in_nodes, hidden_nodes, out_nodes):
+    pos = {}
+    pos.update( (n, (1, i)) for i, n in enumerate(in_nodes[::-1]) )
+    pos.update((n, (2, i*2+10)) for i, n in enumerate(hidden_nodes[::-1]))
+    pos.update((n, (3, i*3+15)) for i, n in enumerate(out_nodes[::-1]))
+
+    return pos
 
 
 if __name__ == '__main__':
