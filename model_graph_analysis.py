@@ -39,6 +39,12 @@ def main():
     model_graph.add_edges_from(in_hidden_edges)
     model_graph.add_edges_from(hidden_out_edges)
 
+    # print(nx.dag_longest_path(model_graph, weight='weight'))
+    # node = 'hidden_7'
+    # for pred in model_graph.predecessors(node):
+    #     orig_weight = model_graph[pred][node]['weight'] * model_graph[pred][node]['sign']
+    #     print(f'{pred}, {node}: {orig_weight}')
+
     node_degree = dict(model_graph.degree(weight='weight'))
     node_in_degree = dict(model_graph.in_degree(weight='weight'))
     node_out_degree = dict(model_graph.out_degree(weight='weight'))
