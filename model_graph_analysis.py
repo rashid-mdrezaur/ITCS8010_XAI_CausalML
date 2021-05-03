@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import torch
 import torch.nn.functional as F
 import networkx as nx
@@ -38,21 +39,24 @@ def main():
     model_graph.add_edges_from(in_hidden_edges)
     model_graph.add_edges_from(hidden_out_edges)
 
-    # print('\ndegree')
-    # print(model_graph.degree(weight='weight'))
-    # print('\ncloseness')
-    # print(nx.closeness_centrality(model_graph, distance='distance'))
-    # print('\nbetweenness')
-    # print(nx.betweenness_centrality(model_graph, weight='weight'))
+    node_degree = dict(model_graph.degree(weight='weight'))
+    node_in_degree = dict(model_graph.in_degree(weight='weight'))
+    node_out_degree = dict(model_graph.out_degree(weight='weight'))
+    closeness = dict(nx.closeness_centrality(model_graph, distance='distance'))
+    betweenness = dict(nx.betweenness_centrality(model_graph, weight='distance'))
 
-    pos = tripartite_draw_pos(in_nodes, hidden_nodes, out_nodes)
-    edge_colors = ['k' if model_graph[u][v]['sign'] == 1 else 'r' for u, v in model_graph.edges()]
-    edge_widths = [model_graph[u][v]['weight'] * 4 for u, v in model_graph.edges()]
+    with open('nn_metrics/node_weighted_degree.json', 'w') as f:
+        json.dump(node_degree, f, indent=2)
+    with open('nn_metrics/node_in_degree.json', 'w') as f:
+        json.dump(node_in_degree, f, indent=2)
+    with open('nn_metrics/node_out_degree.json', 'w') as f:
+        json.dump(node_out_degree, f, indent=2)
+    with open('nn_metrics/node_closeness.json', 'w') as f:
+        json.dump(closeness, f, indent=2)
+    with open('nn_metrics/node_betweenness.json', 'w') as f:
+        json.dump(betweenness, f, indent=2)
 
-    node_degree = [w * 100 for n, w in model_graph.degree(weight='weight')]
-
-    plt.figure(figsize=(12, 8))
-    nx.draw(model_graph, pos=pos, width=edge_widths, edge_color=edge_colors, node_size=node_degree)
+    fig = draw_model_graph(model_graph, in_nodes, hidden_nodes, out_nodes)
     plt.savefig('model_graph.png', dpi=300)
     plt.show()
 
@@ -65,7 +69,6 @@ def make_nodes(layer, dim, has_bias=True):
 
 
 def make_weighted_edges(in_nodes, out_nodes, weights, normalize=False):
-    # TODO: Normalize edge weights (make each neuron sum to 1?)
     weights = weights.T
     if normalize:
         weights = F.normalize(weights, dim=-1)
@@ -87,6 +90,19 @@ def tripartite_draw_pos(in_nodes, hidden_nodes, out_nodes):
     pos.update((n, (3, i*3+15)) for i, n in enumerate(out_nodes[::-1]))
 
     return pos
+
+
+def draw_model_graph(model_graph, in_nodes, hidden_nodes, out_nodes):
+    pos = tripartite_draw_pos(in_nodes, hidden_nodes, out_nodes)
+    edge_colors = ['k' if model_graph[u][v]['sign'] == 1 else 'r' for u, v in model_graph.edges()]
+    edge_widths = [model_graph[u][v]['weight'] * 4 for u, v in model_graph.edges()]
+
+    node_degree = [w * 100 for n, w in model_graph.degree(weight='weight')]
+
+    fig = plt.figure(figsize=(12, 8))
+    nx.draw(model_graph, pos=pos, width=edge_widths, edge_color=edge_colors, node_size=node_degree)
+
+    return fig
 
 
 if __name__ == '__main__':
