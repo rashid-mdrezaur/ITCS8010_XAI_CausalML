@@ -1,0 +1,11 @@
+Leave one out CV
+
+batch_size = 8
+EPOCHS = 20
+lr = 5e-3
+l2_reg = 0.1
+dist_reg = None
+
+Avg Test Accuracy: 0.5043 (0.5021)
+Avg Test MSE: 1.4188 (2.4956)
+Avg Test MAE: 0.7521 (0.9276)

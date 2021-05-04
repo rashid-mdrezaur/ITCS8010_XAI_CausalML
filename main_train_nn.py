@@ -55,7 +55,11 @@ def main():
     # data = data[model_8_cols + ['target']]
 
     acc_list, mse_list, mae_list, mae_missed_list = [], [], [], []
+    # for trial in range(len(data)):
     for trial in range(n_trials):
+
+        # test_df = data.iloc[trial]
+        # train_df = data.drop(trial)
 
         test_df = data.sample(frac=test_size)
         train_df = data.drop(test_df.index)
@@ -118,6 +122,13 @@ def main():
         y_pred, y_true = [], []
         with torch.no_grad():
             model.eval()
+
+            # For LOO with single test example
+            # X = torch.tensor(test_df.iloc[:-1], dtype=torch.float32, device=device).unsqueeze(0)
+            # pred = torch.argmax(model(X), dim=-1)
+            # y_pred.append(pred.item())
+            # y_true.append(test_df.iloc[-1])
+
             for X, y in test_loader:
                 X = X.to(device)
 
