@@ -39,6 +39,8 @@ def main():
     model_graph.add_edges_from(in_hidden_edges)
     model_graph.add_edges_from(hidden_out_edges)
 
+    nx.write_gpickle(model_graph, 'nn_model_graph.gpickle')
+
     # print(nx.dag_longest_path(model_graph, weight='weight'))
     # node = 'hidden_7'
     # for pred in model_graph.predecessors(node):
